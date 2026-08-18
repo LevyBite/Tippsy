@@ -22,12 +22,24 @@ export function AnimatedNumber({
 }: AnimatedNumberProps) {
   const [display, setDisplay] = useState(value)
   const fromRef = useRef(value)
+  const displayRef = useRef(value)
   const rafRef = useRef<number | null>(null)
 
   useEffect(() => {
     const from = fromRef.current
     const to = value
     if (from === to) return
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+
+    if (prefersReducedMotion) {
+      fromRef.current = to
+      displayRef.current = to
+      setDisplay(to)
+      return
+    }
 
     const start = performance.now()
 
@@ -36,12 +48,14 @@ export function AnimatedNumber({
       const progress = Math.min(elapsed / duration, 1)
       const eased = easeOutExpo(progress)
       const current = from + (to - from) * eased
+      displayRef.current = current
       setDisplay(current)
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick)
       } else {
         fromRef.current = to
+        displayRef.current = to
         setDisplay(to)
       }
     }
@@ -50,7 +64,9 @@ export function AnimatedNumber({
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      fromRef.current = display
+      // Always resume from the most recent live value, never a stale
+      // closure — prevents jumpy restarts on rapid consecutive updates.
+      fromRef.current = displayRef.current
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, duration])

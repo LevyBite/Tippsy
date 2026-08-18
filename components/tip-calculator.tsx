@@ -7,6 +7,7 @@ import { TipSelector } from "@/components/tip-selector"
 import { PeopleCounter } from "@/components/people-counter"
 import { ResultPanel } from "@/components/result-panel"
 import { History as HistoryPanel } from "@/components/history"
+import { ConfirmModal } from "@/components/confirm-modal"
 
 const DEFAULT_TIP = 18
 const MAX_BILL = 999999
@@ -73,16 +74,38 @@ export function TipCalculator() {
   }
 
   const clearHistory = () => {
-    // ask for confirmation to avoid accidental data loss
-    if (typeof window !== "undefined") {
-      const ok = window.confirm("Clear all calculation history? This cannot be undone.")
-      if (!ok) return
-    }
-
     try {
       localStorage.removeItem(HISTORY_KEY)
     } catch {}
     setHistory([])
+  }
+
+  // Confirmation modal state
+  const [confirmVisible, setConfirmVisible] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<null | { type: "clear" } | { type: "delete"; id: number }>(null)
+
+  const requestClear = () => {
+    setConfirmAction({ type: "clear" })
+    setConfirmVisible(true)
+  }
+  const requestDelete = (id: number) => {
+    setConfirmAction({ type: "delete", id })
+    setConfirmVisible(true)
+  }
+
+  const handleConfirm = () => {
+    if (confirmAction?.type === "clear") {
+      clearHistory()
+    } else if (confirmAction?.type === "delete") {
+      deleteHistoryEntry(confirmAction.id)
+    }
+    setConfirmVisible(false)
+    setConfirmAction(null)
+  }
+
+  const handleCancel = () => {
+    setConfirmVisible(false)
+    setConfirmAction(null)
   }
 
   const billNum = Number.parseFloat(bill) || 0
@@ -274,7 +297,24 @@ export function TipCalculator() {
         </div>
       </div>
 
-      <HistoryPanel entries={history} onClear={clearHistory} onDelete={deleteHistoryEntry} />
+      <HistoryPanel entries={history} onClear={clearHistory} onDelete={deleteHistoryEntry} onRequestClear={requestClear} onRequestDelete={requestDelete} />
+
+      <ConfirmModal
+        visible={confirmVisible}
+        title={
+          confirmAction?.type === "delete"
+            ? "Delete history entry?"
+            : "Clear all history?"
+        }
+        message={
+          confirmAction?.type === "delete"
+            ? "This will permanently delete this entry."
+            : "This will remove all saved calculations and cannot be undone."
+        }
+        confirmLabel={confirmAction?.type === "delete" ? "Delete" : "Clear"}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </>
   )
 }

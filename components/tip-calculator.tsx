@@ -48,19 +48,37 @@ export function TipCalculator() {
     }
   }, [])
 
+  const persistHistory = (next: HistoryEntry[]) => {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
+    } catch {
+      // ignore write errors
+    }
+  }
+
   const addHistory = (entry: HistoryEntry) => {
     setHistory((prev) => {
       const next = [entry, ...prev].slice(0, 50)
-      try {
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(next))
-      } catch {
-        // localStorage write failed
-      }
+      persistHistory(next)
+      return next
+    })
+  }
+
+  const deleteHistoryEntry = (id: number) => {
+    setHistory((prev) => {
+      const next = prev.filter((e) => e.id !== id)
+      persistHistory(next)
       return next
     })
   }
 
   const clearHistory = () => {
+    // ask for confirmation to avoid accidental data loss
+    if (typeof window !== "undefined") {
+      const ok = window.confirm("Clear all calculation history? This cannot be undone.")
+      if (!ok) return
+    }
+
     try {
       localStorage.removeItem(HISTORY_KEY)
     } catch {}
@@ -256,7 +274,7 @@ export function TipCalculator() {
         </div>
       </div>
 
-      <HistoryPanel entries={history} onClear={clearHistory} />
+      <HistoryPanel entries={history} onClear={clearHistory} onDelete={deleteHistoryEntry} />
     </>
   )
 }

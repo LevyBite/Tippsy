@@ -19,12 +19,14 @@ export function History({
   onClear,
   onDelete,
   onRequestClear,
+  onRequestDelete,
 }: {
   entries: HistoryEntry[]
   onClear: () => void
   onDelete: (id: number) => void
   // optional: request a styled modal; when provided history UI will call this
   onRequestClear?: () => void
+  onRequestDelete?: (id: number) => void
 }) {
   const fmt = (v: number) =>
     `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -75,6 +77,10 @@ export function History({
                     <button
                       type="button"
                       onClick={() => {
+                        if (onRequestDelete) {
+                          onRequestDelete(e.id)
+                          return
+                        }
                         if (typeof window !== "undefined") {
                           const ok = window.confirm("Delete this history entry?")
                           if (!ok) return

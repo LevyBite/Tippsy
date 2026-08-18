@@ -10,9 +10,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Split — Tip Calculator',
+  title: 'Tippsy — Smart Tip & Bill Splitter',
   description:
-    'Split the bill and calculate the tip per person, instantly and beautifully.',
+    'Split any bill, pick the perfect tip, and see everyone’s share update instantly. Round up, share the breakdown, and never do the math yourself again.',
   generator: 'v0.app',
   icons: {
     icon: [
